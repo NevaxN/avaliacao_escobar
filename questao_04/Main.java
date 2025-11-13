@@ -1,5 +1,24 @@
 package questao_04;
 
+/**
+ * JUSTIFICATIVA DA DECISÃO DE DESIGN (Conforme solicitado na memória):
+ * * Padrão de Design Escolhido: Chain of Responsibility (CoR)
+ * * Por que foi escolhido?
+ * 1.  **Processamento em Cadeia (Problema 1):** O problema descreve uma "cadeia" de "validadores especializados". O CoR é o padrão clássico para conectar objetos de processamento (Handlers, ou no nosso caso, Validadores) em uma sequência, onde um documento (NF-e) passa por cada elo da cadeia.
+ * 2.  **Lógica de Contexto e Estado (Req 2, 3, 4):** Um CoR simples apenas passa a solicitação. Para este problema, precisamos de mais controle (Circuit Breaker, Rollback, Condicionais). Para resolver isso, usamos uma variação do CoR onde:
+ * a)  Um **Objeto de Contexto** (`ValidationContext`) é passado *através* da cadeia.
+ * b)  Este contexto armazena o estado global: a lista de falhas, o contador para o circuit breaker (Req 3) e uma pilha de ações de rollback (Req 4).
+ * c)  Os validadores não apenas decidem se *continuam* a cadeia, mas também *modificam* esse contexto.
+ * 3.  **Controle Fino de Fluxo (Req 2, Restrição 1):**
+ * - Para suportar "pule Y se X falhar", o `AbstractValidator` verifica o resultado de cada validador.
+ * - Introduzimos o `ValidationResult` (SUCCESS, SOFT_FAIL, HARD_FAIL). Um `HARD_FAIL` (ex: Schema ou Certificado inválido) interrompe a cadeia *imediatamente*, satisfazendo a Restrição 1. Um `SOFT_FAIL` (ex: regra fiscal menor) registra a falha, mas permite que a cadeia continue, possibilitando que o Circuit Breaker (Req 3) seja atingido.
+ * 4.  **Rollback (Req 4, Restrição 2):**
+ * - O `DatabaseValidator` usa o `ValidationContext` para "empilhar" (`push`) uma ação de rollback (uma Lambda/Runnable).
+ * - Se a cadeia falhar *depois* dele (ex: no `SefazValidator`), o cliente principal (o `main`) detecta a falha e invoca `context.executeRollbacks()`. A pilha LIFO garante que os rollbacks sejam executados na ordem inversa das operações, "desfazendo" o que o `DatabaseValidator` fez.
+ * 5.  **Timeouts (Restrição 3):**
+ * - O `AbstractValidator` (a classe base de todos os validadores) encapsula a lógica de medir o tempo de execução do método `performValidation` da subclasse. Se exceder o `timeoutMs` configurado, ele força uma falha, centralizando essa lógica.
+ *
+ */
 public class Main {
 
     // Método auxiliar para construir a cadeia

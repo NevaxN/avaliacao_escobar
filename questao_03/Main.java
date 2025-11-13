@@ -1,5 +1,13 @@
 package questao_03;
-
+/**
+ * JUSTIFICATIVA DA DECISÃO DE DESIGN (Conforme solicitado na memória):
+ * * Padrão de Design Escolhido: State Pattern
+ * * Por que foi escolhido?
+ * 1.  **Encapsulamento de Comportamento (Problema 1):** O problema descreve um objeto (UsinaNuclear) que muda drasticamente seu comportamento com base em seu estado interno. O State Pattern é ideal para isso, pois encapsula a lógica de cada estado (DESLIGADA, OPERACAO_NORMAL, etc.) em sua própria classe.
+ * 2.  **Prevenção de Transições Inválidas (Problema 3 e 4):** Ao invés de um grande 'switch' ou 'if/else' na classe 'UsinaNuclear' (o "Contexto"), a lógica de transição é delegada ao *objeto de estado atual*. A classe 'OperacaoNormalState' só pode transicionar para 'AlertaAmareloState' ou 'DesligadaState'. Ela nem *sabe* da existência do 'EmergenciaState'. Isso torna impossível a transição 'OPERACAO_NORMAL -> EMERGENCIA', satisfazendo a regra de que 'EMERGENCIA' só vem de 'ALERTA_VERMELHO'.
+ * 3.  **Gerenciamento de Overrides (Problema 5):** O modo 'ManutencaoState' é implementado como outro estado. Quando o contexto é forçado a entrar nesse estado, a lógica de 'verificarSensores' do 'ManutencaoState' (que não faz nada ou apenas verifica a conclusão da manutenção) "sobreescreve" a lógica dos estados operacionais, pois é ela que será executada.
+ *
+ */
 public class Main {
     public static void main(String[] args) throws InterruptedException {
         UsinaNuclear usina = new UsinaNuclear();
